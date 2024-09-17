@@ -1,14 +1,15 @@
-# app.py
-
-from fastapi import FastAPI, HTTPException, Security, Depends, Request
-from fastapi.security.api_key import APIKeyHeader, APIKey
+from fastapi import FastAPI, HTTPException, Security
+from fastapi.security.api_key import APIKeyHeader
 from starlette.status import HTTP_403_FORBIDDEN
-from pydantic import BaseModel, HttpUrl
-from typing import Optional
-from ud_scraper import UDScraper
 import os
 import logging
 
+# Import the Pydantic models
+from pydantic import BaseModel, HttpUrl
+from typing import Optional
+
+# Assuming UDScraper is defined elsewhere and properly imported
+# from ud_scraper import UDScraper
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,24 +50,18 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/scrape")
-async def scrape(request: Request):
-    headers = dict(request.headers)
-    print("Received headers:", headers)
-    logger.info(f"Received headers: {headers}")
-    access_token = request.headers.get('access-token')
-    if access_token != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API key")
+@app.post("/scrape", response_model=ScrapeResponse)
+async def scrape(
+    scrape_request: ScrapeRequest,
+    api_key: str = Security(get_api_key)
+):
+    logger.info(f"Received scrape request for URL: {scrape_request.url} with use_proxy={scrape_request.use_proxy}")
     try:
-        url = request.url
-        use_proxy = request.use_proxy
-        logger.info(f"Received scrape request for URL: {url} with use_proxy={use_proxy}")
-
         # Initialize the scraper
-        scraper = UDScraper(use_proxy=use_proxy)
+        scraper = UDScraper(use_proxy=scrape_request.use_proxy)
 
         # Make the request to the URL
-        soup = scraper.make_request(url)
+        soup = scraper.make_request(str(scrape_request.url))  # Convert HttpUrl to string
         if soup is None:
             logger.error("Failed to scrape the URL")
             raise HTTPException(status_code=500, detail="Failed to scrape the URL")
@@ -79,7 +74,7 @@ async def scrape(request: Request):
         # Close the scraper driver
         scraper.close_driver()
 
-        # Return the soup of the site
+        # Return the scraped HTML content
         return ScrapeResponse(data=html_content)
     except Exception as e:
         logger.exception("An error occurred during scraping")
