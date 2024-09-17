@@ -3,6 +3,7 @@ from fastapi.security.api_key import APIKeyHeader
 from starlette.status import HTTP_403_FORBIDDEN
 import os
 import logging
+from ud_scraper import UDScraper
 
 # Import the Pydantic models
 from pydantic import BaseModel, HttpUrl
