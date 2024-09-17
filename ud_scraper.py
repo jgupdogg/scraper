@@ -1,5 +1,3 @@
-# ud_scraper.py
-
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -34,7 +32,6 @@ class UDScraper:
             logging.info(f"Fetched and cached {len(UDScraper.proxy_pool_cache)} proxies.")
         else:
             logging.info(f"Using cached proxies. {len(UDScraper.proxy_pool_cache)} proxies available.")
-
 
     def get_proxy_pool(self):
         # Fetches fresh proxies from the proxy pool provider
@@ -110,12 +107,20 @@ class UDScraper:
     def setup_driver(self, proxy=None):
         print("Setting up driver...")
         logging.info("Setting up driver...")
+
+        # Minimalistic Chrome options to reduce crashes
         options = uc.ChromeOptions()
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--window-size=1920x1080")
-        options.add_argument("--disable-extensions")
-        options.headless = True  # Run in headless mode
+        options.add_argument("--headless")  # Headless mode for minimal resource usage
+        options.add_argument("--disable-gpu")  # Disable GPU to reduce resource usage
+        options.add_argument("--no-sandbox")  # Prevent sandboxing to improve stability
+        options.add_argument("--disable-dev-shm-usage")  # Overcome /dev/shm issues in Docker
+        options.add_argument("--disable-crash-reporter")  # Disable crash reporter
+        options.add_argument("--disable-extensions")  # Disable extensions for performance
+        options.add_argument("--disable-in-process-stack-traces")
+        options.add_argument("--disable-logging")
+        options.add_argument("--log-level=3")
+        options.add_argument("--output=/dev/null")
+        options.add_argument("--window-size=1920x1080")  # Set window size
 
         if proxy:
             print(f"Using proxy: {proxy['ip']}:{proxy['port']}")
@@ -124,14 +129,8 @@ class UDScraper:
         else:
             print("Not using a proxy")
 
-        # Specify the path to the Chrome binary
+        # Set binary location (optional, depending on your environment)
         chrome_binary_path = "/usr/bin/google-chrome"
-
-        # Ensure chrome_binary_path is a string
-        if not isinstance(chrome_binary_path, str):
-            raise TypeError("Chrome binary path must be a string")
-
-        # Set binary_location directly in options
         options.binary_location = chrome_binary_path
 
         try:
@@ -140,6 +139,7 @@ class UDScraper:
             print(f"Failed to initialize Chrome driver: {e}")
             raise
 
+        # Anti-bot protection: remove 'webdriver' property from navigator object
         driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
             "source": """
                 Object.defineProperty(navigator, 'webdriver', {
