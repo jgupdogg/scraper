@@ -47,6 +47,7 @@ RUN google-chrome --version
 # Set the working directory
 WORKDIR /app
 
+
 # Copy the requirements file into the container
 COPY requirements.txt /app/requirements.txt
 
@@ -59,5 +60,8 @@ COPY . /app
 # Expose the port FastAPI will run on
 EXPOSE 8080
 
+# Set environment variables
+ENV API_KEY=${API_KEY}
+
 # Start the FastAPI application using Uvicorn
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

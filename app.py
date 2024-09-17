@@ -7,15 +7,11 @@ from pydantic import BaseModel
 from typing import Optional
 from ud_scraper import UDScraper
 import os
-from dotenv import load_dotenv
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Load environment variables from .env file
-load_dotenv()
 
 app = FastAPI()
 
