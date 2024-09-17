@@ -60,8 +60,5 @@ COPY . /app
 # Expose the port FastAPI will run on
 EXPOSE 8080
 
-# Set environment variables
-ENV API_KEY=${API_KEY}
-
 # Start the FastAPI application using Uvicorn
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
