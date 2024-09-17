@@ -48,6 +48,7 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 async def health_check():
     return {"status": "healthy"}
 
+@app.post("/scrape")
 async def scrape(request: Request):
     headers = dict(request.headers)
     print("Received headers:", headers)
