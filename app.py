@@ -1,6 +1,6 @@
 # app.py
 
-from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi import FastAPI, HTTPException, Security, Depends, Request
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from starlette.status import HTTP_403_FORBIDDEN
 from pydantic import BaseModel
@@ -48,11 +48,13 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/scrape", response_model=ScrapeResponse)
-async def scrape_endpoint(
-    request: ScrapeRequest,
-    api_key: APIKey = Depends(get_api_key)
-):
+async def scrape(request: Request):
+    headers = dict(request.headers)
+    print("Received headers:", headers)
+    logger.info(f"Received headers: {headers}")
+    access_token = request.headers.get('access-token')
+    if access_token != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API key")
     try:
         url = request.url
         use_proxy = request.use_proxy
