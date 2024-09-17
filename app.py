@@ -49,18 +49,24 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/scrape", response_model=ScrapeResponse)
-async def scrape(
-    scrape_request: ScrapeRequest,
-    api_key: str = Security(get_api_key)
-):
-    logger.info(f"Received scrape request for URL: {scrape_request.url} with use_proxy={scrape_request.use_proxy}")
+@app.post("/scrape")
+async def scrape(request: Request):
+    headers = dict(request.headers)
+    print("Received headers:", headers)
+    logger.info(f"Received headers: {headers}")
+    access_token = request.headers.get('access-token')
+    if access_token != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API key")
     try:
+        url = request.url
+        use_proxy = request.use_proxy
+        logger.info(f"Received scrape request for URL: {url} with use_proxy={use_proxy}")
+
         # Initialize the scraper
-        scraper = UDScraper(use_proxy=scrape_request.use_proxy)
+        scraper = UDScraper(use_proxy=use_proxy)
 
         # Make the request to the URL
-        soup = scraper.make_request(scrape_request.url)
+        soup = scraper.make_request(url)
         if soup is None:
             logger.error("Failed to scrape the URL")
             raise HTTPException(status_code=500, detail="Failed to scrape the URL")
@@ -73,7 +79,7 @@ async def scrape(
         # Close the scraper driver
         scraper.close_driver()
 
-        # Return the scraped HTML content
+        # Return the soup of the site
         return ScrapeResponse(data=html_content)
     except Exception as e:
         logger.exception("An error occurred during scraping")
